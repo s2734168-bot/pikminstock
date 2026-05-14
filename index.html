@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pikmin Bloom</title>
+    <style>
+        :root {
+            --bg-main: #EAF7E6;
+            --bg-card: #FFFFFF;
+            --primary-green: #74C365;
+            --text-dark: #3A4D39;
+            --text-sub: #739072;
+            --accent-gold: #ECE3CE;
+            
+            /* 台股專屬直覺：漲紅跌綠 */
+            --status-up: #FF4757;
+            --status-down: #2ED573;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .phone-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            height: 100dvh; 
+            background: linear-gradient(to bottom, #EAF7E6 0%, #C7E8B5 100%);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .top-bar {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .step-counter {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-title {
+            font-size: 11px;
+            color: var(--text-sub);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .step-number {
+            font-size: 21px;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1.2;
+        }
+
+        .top-right-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .coin-status {
+            background: #FFF2CC;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            border: 1px solid #F1C232;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sync-time {
+            font-size: 9px;
+            color: var(--text-sub);
+            font-weight: bold;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .planter-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.04);
+            transition: transform 0.1s;
+        }
+
+        /* 迷你花盆花苗外框 */
+        .pot-container {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+            padding-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        .sprout-item {
+            font-size: 20px;
+            line-height: 1;
+            margin-bottom: -3px;
+            z-index: 2;
+        }
+
+        .flowerpot-item {
+            width: 26px;
+            height: 18px;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+            border: 2px solid #3A4D39;
+            z-index: 1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .seedling-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .seedling-name {
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .seedling-code {
+            font-size: 10px;
+            color: var(--text-sub);
+            background: #EDF4ED;
+            padding: 1px 5px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        /* 雙向增長能量進度條 */
+        .progress-container {
+            width: 100%;
+            background: #EAEAEA;
+            height: 8px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+
+        /* 50% 核心中線 */
+        .progress-container::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: #C5C5C5;
+            z-index: 3;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 50%;
+            position: absolute;
+            transition: all 0.4s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+            z-index: 2;
+            background-color: #D0D0D0;
+        }
+
+        .progress-text {
+            font-size: 11px;
+            color: var(--text-sub);
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1px;
+        }
+
+        .status-badge {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 8px;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .red-theme .flowerpot-item { background-color: #FF5252; }
+        .yellow-theme .flowerpot-item { background-color: #FFD43B; }
+        .blue-theme .flowerpot-item { background-color: #3498DB; }
+
+        .bottom-nav {
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .nav-item { font-size: 20px; opacity: 0.6; }
+        .nav-item.active { opacity: 1; color: var(--primary-green); }
+
+        .whistle-btn {
+            width: 42px;
+            height: 42px;
+            background: var(--primary-green);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            box-shadow: 0 3px 8px rgba(116, 195, 101, 0.3);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .settings-panel {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 88%;
+            background: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
+            transition: bottom 0.4s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+            overflow-y: auto;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .settings-panel.open { bottom: 0; }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #EEE;
+            padding-bottom: 8px;
+        }
+
+        .stock-input-group {
+            background: #F9F9F9;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border: 1px solid #ECEFF1;
+        }
+
+        .stock-input-row { display: flex; gap: 6px; }
+
+        .stock-input-row input {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #CCC;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+        
+        .stock-input-row input.full-width { width: 100%; }
+
+        .save-btn {
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 4px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+    
+    <div class="top-bar">
+        <div class="step-counter">
+            <span class="step-title">TODAY'S STEPS</span>
+            <span class="step-number" id="total-steps-display">22,854</span>
+        </div>
+        <div class="top-right-status">
+            <div class="coin-status">
+                🎁 <span id="coin-display">＋15</span>
+            </div>
+            <span class="sync-time" id="sync-time-display">SYNC --:--:--</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="section-title">🌱 培育中的花苗 (3/3)</div>
+        
+        <div class="planter-card red-theme">
+            <div class="pot-container">
+                <span class="sprout-item">🌱</span>
+                <div class="flowerpot-item"></div>
+            </div>
+            <div class="seedling-info">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
+                    <span class="seedling-name" id="card-name-0">紅花盆嫩芽</span>
+                    <span class="status-badge" id="card-status-0">加成 +1.2%</span>
+                </div>
+                <span class="seedling-code" id="card-code-0">NO. 2330</span>
+                <div class="progress-container"><div class="progress-bar" id="card-progress-0" style="left:0%; width:56%;"></div></div>
+                <div class="progress-text"><span>能量成長幅</span><span id="card-price-0">950 步</span></div>
+            </div>
+        </div>
+
+        <div class="planter-card yellow-theme">
+            <div class="pot-container">
+                <span class="sprout-item">🌱</span>
+                <div class="flowerpot-item"></div>
+            </div>
+            <div class="seedling-info">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
+                    <span class="seedling-name" id="card-name-1">黃花盆嫩芽</span>
+                    <span class="status-badge" id="card-status-1">加成 -0.8%</span>
+                </div>
+                <span class="seedling-code" id="card-code-1">NO. 1513</span>
+                <div class="progress-container"><div class="progress-bar" id="card-progress-1" style="right:50%; width:4%;"></div></div>
+                <div class="progress-text"><span>能量成長幅</span><span id="card-price-1">180 步</span></div>
+            </div>
+        </div>
+
+        <div class="planter-card blue-theme">
+            <div class="pot-container">
+                <span class="sprout-item">🌱</span>
+                <div class="flowerpot-item"></div>
+            </div>
+            <div class="seedling-info">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
+                    <span class="seedling-name" id="card-name-2">藍花盆嫩芽</span>
+                    <span class="status-badge" id="card-status-2">加成 0.0%</span>
+                </div>
+                <span class="seedling-code" id="card-code-2">NO. 1723</span>
+                <div class="progress-container"><div class="progress-bar" id="card-progress-2" style="left:0%; width:50%;"></div></div>
+                <div class="progress-text"><span>能量成長幅</span><span id="card-price-2">140 步</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item">🧭</div>
+        <div class="nav-item active">🎒</div>
+        <div class="whistle-btn" id="whistle-trigger">📣</div>
+        <div class="nav-item">👥</div>
+        <div class="nav-item">🏵️</div>
+    </div>
+
+    <div class="settings-panel" id="settings-panel">
+        <div class="settings-header">
+            <h3>⚙️ 觀測目標設定後台</h3>
+            <span style="cursor:pointer; font-size:20px;" id="close-panel">❌</span>
+        </div>
+        
+        <div class="stock-input-group">
+            <strong style="color:#FF5252; font-size:13px;">● 紅色花盆花苗設定 (股票 1)</strong>
+            <div class="stock-input-row"><input type="text" id="input-name-0" class="full-width" placeholder="自訂名稱"></div>
+            <div class="stock-input-row"><input type="text" id="input-code-0" class="full-width" placeholder="輸入股票代號"></div>
+        </div>
+
+        <div class="stock-input-group">
+            <strong style="color:#FFD43B; font-size:13px;">● 黃色花盆花苗設定 (股票 2)</strong>
+            <div class="stock-input-row"><input type="text" id="input-name-1" class="full-width" placeholder="自訂名稱"></div>
+            <div class="stock-input-row"><input type="text" id="input-code-1" class="full-width" placeholder="輸入股票代號"></div>
+        </div>
+
+        <div class="stock-input-group">
+            <strong style="color:#3498DB; font-size:13px;">● 藍色花盆花苗設定 (股票 3)</strong>
+            <div class="stock-input-row"><input type="text" id="input-name-2" class="full-width" placeholder="自訂名稱"></div>
+            <div class="stock-input-row"><input type="text" id="input-code-2" class="full-width" placeholder="輸入股票代號"></div>
+        </div>
+
+        <button class="save-btn" id="save-settings-btn">確認同步遊戲數據</button>
+    </div>
+</div>
+
+<script>
+    // 🔗 已為你自動置入專屬 Google Apps Script 網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby9pznOXriWJK2e6gK8mqVMQgAJcLrds9IZ4cMIZuw_1iVXebPko0pLQLM7Db4BJISb/exec";
+
+    const defaultData = [
+        { name: '紅花盆嫩芽', code: '2330' },
+        { name: '黃花盆嫩芽', code: '1513' },
+        { name: '藍花盆嫩芽', code: '1723' }
+    ];
+
+    let stockData = JSON.parse(localStorage.getItem('pikmin_stocks')) || defaultData;
+
+    const whistleTrigger = document.getElementById('whistle-trigger');
+    const settingsPanel = document.getElementById('settings-panel');
+    const closePanel = document.getElementById('close-panel');
+    const saveBtn = document.getElementById('save-settings-btn');
+    const totalStepsDisplay = document.getElementById('total-steps-display');
+    const coinDisplay = document.getElementById('coin-display');
+    const syncTimeDisplay = document.getElementById('sync-time-display');
+
+    whistleTrigger.addEventListener('click', () => {
+        let clicks = parseInt(whistleTrigger.dataset.clicks || 0) + 1;
+        whistleTrigger.dataset.clicks = clicks;
+        clearTimeout(window.whistleTimer);
+        window.whistleTimer = setTimeout(() => { whistleTrigger.dataset.clicks = 0; }, 1500);
+
+        if (clicks === 3) {
+            whistleTrigger.dataset.clicks = 0;
+            stockData.forEach((data, index) => {
+                document.getElementById(`input-name-${index}`).value = data.name || '';
+                document.getElementById(`input-code-${index}`).value = data.code || '';
+            });
+            settingsPanel.classList.add('open');
+        }
+    });
+
+    closePanel.addEventListener('click', () => { settingsPanel.classList.remove('open'); });
+
+    saveBtn.addEventListener('click', async () => {
+        const newData = [];
+        for (let i = 0; i < 3; i++) {
+            const name = document.getElementById(`input-name-${i}`).value || '未命名花苗';
+            const code = document.getElementById(`input-code-${i}`).value || '----';
+            newData.push({ name, code });
+        }
+        stockData = newData;
+        localStorage.setItem('pikmin_stocks', JSON.stringify(stockData));
+        settingsPanel.classList.remove('open');
+        await fetchAllData();
+    });
+
+    function updateClock() {
+        const now = new Date();
+        syncTimeDisplay.innerText = `SYNC ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+
+    async function fetchAllData() {
+        updateClock();
+        
+        if (!GAS_URL || GAS_URL.includes("YOUR_GAS_WEB_APP_URL")) {
+            renderLocalUI();
+            return;
+        }
+
+        try {
+            const codes = stockData.map(d => d.code).join(',');
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            
+            const response = await fetch(`${GAS_URL}?stocks=${codes}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) throw new Error("Backend Error");
+            const json = await response.json();
+            
+            // 1. 渲染大盤步數
+            if (json['TAIEX'] && json['TAIEX'].price > 0) {
+                const taiex = json['TAIEX'];
+                const diff = taiex.price - taiex.prevClose;
+                const pct = ((diff / taiex.prevClose) * 100).toFixed(2);
+                totalStepsDisplay.innerText = Math.round(taiex.price).toLocaleString();
+                coinDisplay.innerText = `${diff >= 0 ? '＋' : '－'}${Math.max(1, Math.floor(Math.abs(pct) * 10))}`;
+            }
+
+            // 2. 渲染 3 檔自選股
+            stockData.forEach((data, index) => {
+                const stockResult = json[data.code];
+                if (!stockResult || stockResult.price === 0) return; 
+
+                document.getElementById(`card-name-${index}`).innerText = data.name;
+                document.getElementById(`card-code-${index}`).innerText = `NO. ${data.code}`;
+                document.getElementById(`card-price-${index}`).innerText = `${parseFloat(stockResult.price).toLocaleString()} 步`;
+                
+                const changeNum = ((stockResult.price - stockResult.prevClose) / stockResult.prevClose * 100);
+                const currentChange = (changeNum >= 0 ? '+' : '') + changeNum.toFixed(2) + '%';
+                
+                const cardStatus = document.getElementById(`card-status-${index}`);
+                cardStatus.innerText = `加成 ${currentChange}`;
+
+                const bar = document.getElementById(`card-progress-${index}`);
+                const widthPercentage = Math.min((Math.abs(changeNum) / 10) * 50, 50);
+                
+                bar.style.left = 'auto';
+                bar.style.right = 'auto';
+
+                if (changeNum > 0) {
+                    // 漲：左半邊 0%~50% 補滿紅色，並且向右多增長 widthPercentage
+                    bar.style.left = '0%';
+                    bar.style.width = `${50 + widthPercentage}%`;
+                    bar.style.backgroundColor = 'var(--status-up)';
+                    cardStatus.style.backgroundColor = 'var(--status-up)';
+                } else if (changeNum < 0) {
+                    // 跌：從中間 50% 出發，向左延伸 widthPercentage
+                    bar.style.right = '50%';
+                    bar.style.width = `${widthPercentage}%`;
+                    bar.style.backgroundColor = 'var(--status-down)';
+                    cardStatus.style.backgroundColor = 'var(--status-down)';
+                } else {
+                    // 平盤：前半截填滿到正中央
+                    bar.style.left = '0%';
+                    bar.style.width = '50%';
+                    bar.style.backgroundColor = '#D0D0D0';
+                    cardStatus.style.backgroundColor = 'var(--text-sub)';
+                }
+            });
+        } catch (error) {
+            console.log("後台連線休眠中，已轉載本地安全防禦數據。");
+            renderLocalUI();
+        }
+    }
+
+    function renderLocalUI() {
+        stockData.forEach((data, index) => {
+            document.getElementById(`card-name-${index}`).innerText = data.name;
+            document.getElementById(`card-code-${index}`).innerText = `NO. ${data.code}`;
+        });
+    }
+
+    fetchAllData();
+</script>
+
+</body>
+</html>
